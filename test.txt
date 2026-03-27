@@ -1,0 +1,8 @@
+
+{
+    nval = true
+    v=3
+    nugga=2
+}
+
+bg_color = #35e234
