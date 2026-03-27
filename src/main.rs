@@ -18,5 +18,5 @@ fn main() {
     c.load_types(&typedefs);
 
     let val = c.get("bg_color").unwrap();
-    println!("{:?}", val);
+    println!("{:?}", *val);
 }
