@@ -1,7 +1,15 @@
 [package]
-name = "config"
+name = "comfyg"
 version = "0.1.0"
 edition = "2024"
+description = "A minimal, no_std-compatible typed configuration file parser"
+license = "MIT"
+repository = "https://github.com/Hoteira/comfyg"
+homepage = "https://github.com/Hoteira/comfyg"
+documentation = "https://docs.rs/comfyg"
+keywords = ["config", "parser", "no_std", "configuration"]
+categories = ["config", "parsing", "no-std"]
+readme = "README.md"
 
 [features]
 default = ["std"]
