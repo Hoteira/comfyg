@@ -1,16 +1,26 @@
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
+#![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::types::Parse;
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 
-mod types;
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as Map;
+#[cfg(feature = "std")]
+use std::collections::HashMap as Map;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(feature = "std")]
+use std::string::String;
+
+use types::Parse;
+
+pub mod types;
 
 pub struct Config<'a> {
-    typedefs: Option<&'a std::collections::HashMap<String, types::Types>>,
+    typedefs: Option<&'a Map<&'a str, types::Types>>,
     file: Option<&'a [u8]>,
-    cached_map: std::collections::HashMap<String, types::ReturnTypes>,
+    cached_map: Map<String, types::ReturnTypes>,
 }
 
 impl<'a> Config<'a> {
@@ -18,11 +28,11 @@ impl<'a> Config<'a> {
         Self {
             typedefs: None,
             file: None,
-            cached_map: std::collections::HashMap::new(),
+            cached_map: Map::new(),
         }
     }
 
-    pub fn load_types(&mut self, typedefs: &'a std::collections::HashMap<String, types::Types>) {
+    pub fn load_types(&mut self, typedefs: &'a Map<&'a str, types::Types>) {
         self.typedefs = Some(typedefs);
     }
 
@@ -57,11 +67,11 @@ impl<'a> Config<'a> {
                     value_part.split('#').next().unwrap_or("").trim()
                 };
 
-                let attr_value_type = typedefs.get(name).unwrap_or(&types::Types::String);
+                let default = types::Types::String;
+                let attr_value_type = typedefs.get(name).unwrap_or(&default);
 
                 if let Ok(parsed_value) = attr_value_type.parse(attr_value) {
-                    println!("{} : {} => {:#?}", name, attr_value, parsed_value);
-                    self.cached_map.insert(name.to_string(), parsed_value);
+                    self.cached_map.insert(String::from(name), parsed_value);
                 }
             }
         }
@@ -71,7 +81,6 @@ impl<'a> Config<'a> {
         if self.cached_map.is_empty() {
             self.parse();
         }
-
         self.cached_map.get(key)
     }
 }

@@ -1,80 +1,65 @@
 use super::ParserError;
 
 pub fn parse_color(value: &str) -> Result<[u8; 4], ParserError> {
-    let color_string = String::from(value.replace(" ", ""));
+    let value = value.trim();
 
-    //formats:
-    // #RRGGBBAA V
-    // RRGGBBAA V
-    // RRGGBB V
-    // rgb(r, g, b) V
-    // rgba(r, g, b, a) V
-    // 0xRRGGBBAA V
-    // 0XRRGGBBAA V
-
-    if let Some(hex_val) = color_string
+    if let Some(hex) = value
         .strip_prefix("0x")
-        .or_else(|| color_string.strip_prefix("0X"))
-        .or_else(|| color_string.strip_prefix("#"))
+        .or_else(|| value.strip_prefix("0X"))
+        .or_else(|| value.strip_prefix('#'))
     {
-        return parse_hex_color(hex_val);
+        return parse_hex_color(hex);
     }
 
-    if let Some(rgb_val) = color_string.strip_prefix("rgba(") {
-        let inner = rgb_val.trim_end_matches(')');
+    if let Some(inner) = value
+        .strip_prefix("rgba(")
+        .and_then(|s| s.strip_suffix(')'))
+    {
         return parse_rgb_color(inner);
     }
 
-    if let Some(rgb_val) = color_string.strip_prefix("rgb(") {
-        let inner = rgb_val.trim_end_matches(')');
+    if let Some(inner) = value.strip_prefix("rgb(").and_then(|s| s.strip_suffix(')')) {
         return parse_rgb_color(inner);
     }
 
-    parse_hex_color(&color_string)
+    parse_hex_color(value)
 }
 
 fn parse_rgb_color(value: &str) -> Result<[u8; 4], ParserError> {
-    let rgb = value.split(",").map(|s| s.trim()).collect::<Vec<_>>();
-    let err = ParserError::InvalidColor(format!("Invalid rgb color: {}", value));
+    let mut parts = value.split(',');
 
-    if rgb.len() == 3 {
-        return Ok([
-            u8::from_str_radix(rgb[0], 10).map_err(|_| err.clone())?,
-            u8::from_str_radix(rgb[1], 10).map_err(|_| err.clone())?,
-            u8::from_str_radix(rgb[2], 10).map_err(|_| err.clone())?,
-            0xFF,
-        ]);
-    } else if rgb.len() == 4 {
-        return Ok([
-            u8::from_str_radix(rgb[0], 10).map_err(|_| err.clone())?,
-            u8::from_str_radix(rgb[1], 10).map_err(|_| err.clone())?,
-            u8::from_str_radix(rgb[2], 10).map_err(|_| err.clone())?,
-            u8::from_str_radix(rgb[3], 10).map_err(|_| err.clone())?,
-        ]);
-    } else {
-        return Err(err);
+    let mut next_u8 = || -> Option<u8> { parts.next()?.trim().parse().ok() };
+
+    let r = next_u8().ok_or(ParserError::InvalidColor)?;
+    let g = next_u8().ok_or(ParserError::InvalidColor)?;
+    let b = next_u8().ok_or(ParserError::InvalidColor)?;
+    // alpha is optional, defaults to opaque
+    let a = next_u8().unwrap_or(0xFF);
+
+    // reject anything with extra components
+    if parts.next().is_some() {
+        return Err(ParserError::InvalidColor);
     }
+
+    Ok([r, g, b, a])
 }
 
 fn parse_hex_color(value: &str) -> Result<[u8; 4], ParserError> {
-    let err = || ParserError::InvalidColor(format!("Invalid hex color: {}", value));
+    let parse = |s: &str| u8::from_str_radix(s, 16).map_err(|_| ParserError::InvalidColor);
 
     match value.len() {
-        6 => {
-            // RRGGBB
-            let r = u8::from_str_radix(&value[0..2], 16).map_err(|_| err())?;
-            let g = u8::from_str_radix(&value[2..4], 16).map_err(|_| err())?;
-            let b = u8::from_str_radix(&value[4..6], 16).map_err(|_| err())?;
-            Ok([r, g, b, 255])
-        }
-        8 => {
-            // RRGGBBAA
-            let r = u8::from_str_radix(&value[0..2], 16).map_err(|_| err())?;
-            let g = u8::from_str_radix(&value[2..4], 16).map_err(|_| err())?;
-            let b = u8::from_str_radix(&value[4..6], 16).map_err(|_| err())?;
-            let a = u8::from_str_radix(&value[6..8], 16).map_err(|_| err())?;
-            Ok([r, g, b, a])
-        }
-        _ => Err(err()),
+        6 => Ok([
+            parse(&value[0..2])?,
+            parse(&value[2..4])?,
+            parse(&value[4..6])?,
+            255,
+        ]),
+        8 => Ok([
+            parse(&value[0..2])?,
+            parse(&value[2..4])?,
+            parse(&value[4..6])?,
+            parse(&value[6..8])?,
+        ]),
+        _ => Err(ParserError::InvalidColor),
     }
 }

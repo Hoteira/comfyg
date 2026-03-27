@@ -3,6 +3,10 @@ name = "config"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["std"]
+std = []
+
 [dependencies]
 
 [lib]
@@ -10,5 +14,5 @@ name = "comfyg"
 path = "src/lib.rs"
 
 [[bin]]
-name = "my_gui_exe"
+name = "comfyg"
 path = "src/main.rs"

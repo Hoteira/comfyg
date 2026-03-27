@@ -1,21 +1,16 @@
-use crate::types::ParserError;
+use super::ParserError;
 
 pub fn parse_number(value: &str) -> Result<f64, ParserError> {
-    let n = value.replace(" ", "");
-    let err = ParserError::InvalidNumber(format!("Invalid number: {}", value));
-    let hex_err = ParserError::InvalidNumber(format!("Invalid number: {}", value));
+    let value = value.trim();
 
-    if value.starts_with("0x") {
-        let n = n.trim_start_matches("0x");
-        let val = u64::from_str_radix(n, 16).map_err(|_| hex_err)?;
-        return Ok(val as f64);
+    if let Some(hex) = value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+    {
+        return u64::from_str_radix(hex, 16)
+            .map(|v| v as f64)
+            .map_err(|_| ParserError::InvalidNumber);
     }
 
-    if value.starts_with("0X") {
-        let n = n.trim_start_matches("0X");
-        let val = u64::from_str_radix(n, 16).map_err(|_| hex_err)?;
-        return Ok(val as f64);
-    }
-
-    Ok(n.parse::<f64>().map_err(|_| err)?)
+    value.parse::<f64>().map_err(|_| ParserError::InvalidNumber)
 }

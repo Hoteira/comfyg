@@ -1,3 +1,13 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(feature = "std")]
+use std::string::String;
+
 pub enum Types {
     Color,
     Number,
@@ -30,10 +40,9 @@ impl Parse for Types {
 
 #[derive(Debug, Clone)]
 pub enum ParserError {
-    InvalidColor(String),
-    InvalidNumber(String),
-    _InvalidString(String), //Here for completeness
-    InvalidBool(String),
+    InvalidColor,
+    InvalidNumber,
+    InvalidBool,
 }
 
 pub mod bool;
