@@ -1,4 +1,4 @@
-# Comfyg
+# Comfyg 😴
 
 A minimal, `no_std`-compatible configuration file parser for custom config formats inspired by Hyprland-style syntax. Built for use in OS projects, embedded environments, and anywhere you want a lightweight, typed config parser without pulling in heavy dependencies.
 
